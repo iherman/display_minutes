@@ -10,10 +10,13 @@ export interface Minutes {
     date  : Date;
 }
 
-export interface DisplayedTOC {
+export interface DisplayedData {
     url  : URL;
     date : Date;
     toc  : string[];
+    res  : string[];
 }
 
-export type FullTOC = Map<number, DisplayedTOC[]>;
+export type GroupedData = Map<number, DisplayedData[]>;
+
+export const ignoredFiles: string[] = ["index.html","resolutions.html"];

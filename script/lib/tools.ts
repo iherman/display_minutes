@@ -1,4 +1,4 @@
-import { URL, APIUrl, HTMLUrl, Minutes, DisplayedTOC, FullTOC } from "./common.ts";
+import { URL, APIUrl, HTMLUrl, Minutes, DisplayedData, GroupedData, ignoredFiles } from "./common.ts";
 
 /**
  * Get the URLs of all the minutes for a given WG.
@@ -27,9 +27,8 @@ async function getMinutes(wg: string): Promise<Minutes[]> {
     });
 
     // remove the index file, if it is there:
-    const final_data = sorted_data.filter((f: { name: string; }): boolean => {
-        return f.name !== "index.html";
-    })
+    const final_data = sorted_data.filter((f: { name: string; }): boolean => !ignoredFiles.includes(f.name));
+
     // deno-lint-ignore no-explicit-any
     const links = final_data.map((entry: any): Minutes => {
         // The current setup is such that the date is part of the filename.
@@ -45,7 +44,7 @@ async function getMinutes(wg: string): Promise<Minutes[]> {
 }
 
 /**
- * Get back the content from the URL (referring to an HTML file, presumably), 
+ * Get back the content from a URL (referring to an HTML file, presumably), 
  * as an array of strings.
  *
  * @param url 
@@ -58,8 +57,24 @@ async function getContent(url: URL): Promise<string[]> {
 }
 
 /* **************************************************************************************** */
-/*                     Handling the TOC content of a single minutes file                    */
+/*                     Handling the Data content of a single minutes file                    */
 /* **************************************************************************************** */
+
+function cleanupDataFunc(entry: Minutes): (content: string) => string {
+    const cleanupData = (nav: string): string => {
+        return nav
+            // The TOC title should not be a h2
+            .replace("<h2>Contents</h2>", "")
+            // The TOC title should not be a h2
+            .replace("<h2>Summary of resolutions</h2>", "")
+            // The nav id value should be removed
+            .replace("<nav id=toc>", "<nav>")
+            // References should not be relative
+            .replace(/href="#/g, `href="${entry.url}#`)
+            ;
+    };
+    return cleanupData;
+}
 
 /**
  * Extract the Table of Contents from the content of a minutes file.
@@ -69,18 +84,6 @@ async function getContent(url: URL): Promise<string[]> {
  * @returns 
  */
 function extractTOC(entry: Minutes, content: string[]): string[] {
-    const cleanupToc = (nav: string): string => {
-        return nav
-            // The TOC title should not be a h2
-            .replace("<h2>Contents</h2>", "")
-            // The nav id value should be removed
-            .replace("<nav id=toc>", "<nav>")
-            // References should not be relative
-            .replace(/href="#/g, `href="${entry.url}#`)
-            ;
-        // Remove empty lines from the array
-    }
-
     const nav_begin_i: number = content.indexOf("<nav id=toc>");
 
     if (nav_begin_i === -1) {
@@ -94,7 +97,26 @@ function extractTOC(entry: Minutes, content: string[]): string[] {
             return [];
         } else {
             const toc = nav_begin.slice(0, nav_end_i + 1);
-            return toc.map(cleanupToc).filter((line: string) => line !== "");
+            return toc.map(cleanupDataFunc(entry)).filter((line: string) => line !== "");
+        }
+    }
+}
+
+function extractResolutions(entry: Minutes, content: string[]): string[] {
+    const res_begin_i: number = content.indexOf("<div id=ResolutionSummary>");
+    if (res_begin_i === -1) {
+        return [];
+    } else {
+        const res_begin = content.slice(res_begin_i);
+        const res_end_i = res_begin.indexOf("</div>");
+        if (res_end_i === -1) {
+            return [];
+        } else {
+            // Note that the minute HTML begins with the
+            // lines "<div id=ResolutionSummary"> and is followed by an "<h2>"
+            // These are removed, as well as the closing "</div>".
+            const output = res_begin.slice(1, res_end_i);
+            return output.map(cleanupDataFunc(entry)).filter((line: string) => line !== "");
         }
     }
 }
@@ -107,14 +129,14 @@ function extractTOC(entry: Minutes, content: string[]): string[] {
  * @returns 
  */
 // deno-lint-ignore require-await
-async function getAllTOC(data: Minutes[]): Promise<DisplayedTOC[]> {
-    const retrieveDisplayTOC = async (entry: Minutes): Promise<DisplayedTOC> => {
+async function getAllTOC(data: Minutes[]): Promise<DisplayedData[]> {
+    const retrieveDisplayTOC = async (entry: Minutes): Promise<DisplayedData> => {
         const content = await getContent(entry.url);
-        const toc = extractTOC(entry, content);
         return {
             url : entry.url,
             date: entry.date,
-            toc: toc,
+            toc: extractTOC(entry, content),
+            res: extractResolutions(entry, content),
         };
     }
 
@@ -130,9 +152,9 @@ async function getAllTOC(data: Minutes[]): Promise<DisplayedTOC[]> {
  * @param wg 
  * @returns 
  */
-export async function getGroupedTOCs(wg: string): Promise<FullTOC> {
-    const groupDisplayedTOCByYear = (data: DisplayedTOC[]): FullTOC => {
-        const groups: FullTOC = new Map<number, DisplayedTOC[]>();
+export async function getGroupedData(wg: string): Promise<GroupedData> {
+    const groupDisplayedDataByYear = (data: DisplayedData[]): GroupedData => {
+        const groups: GroupedData = new Map<number, DisplayedData[]>();
         for (const entry of data) {
             const year = entry.date.getFullYear();
             if (!groups.has(year)) {
@@ -143,7 +165,7 @@ export async function getGroupedTOCs(wg: string): Promise<FullTOC> {
         return groups;
     }
 
-    const minutes: Minutes[]      = await getMinutes(wg);
-    const display: DisplayedTOC[] = await getAllTOC(minutes);
-    return groupDisplayedTOCByYear(display);
+    const minutes: Minutes[]       = await getMinutes(wg);
+    const display: DisplayedData[] = await getAllTOC(minutes);
+    return groupDisplayedDataByYear(display);
 }
