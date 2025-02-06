@@ -1,0 +1,42 @@
+name: Generate and publish the index and resolutions files for the minutes/index.html
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-gh-pages:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout the repository
+        uses: actions/checkout@v2
+ 
+      - name: checkout the gh-pages branch
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git reset --hard origin/main # The gh-pages branch should be in sync with main
+
+      - name: setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: generate the index and resolutions files
+        run: |
+          (cd script; deno run -A main.ts)
+          cp script/index.html minutes/index.html
+          cp script/resolutions.html minutes/resolutions.html
+
+      - name: commit the changes
+        run: |
+          git add minutes/index.html
+          git add minutes/resolutions.html
+          git commit -m "Update generated files""
+          git push origin gh-pages --force

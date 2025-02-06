@@ -65,12 +65,12 @@ function cleanupDataFunc(entry: Minutes): (content: string) => string {
         return nav
             // The TOC title should not be a h2
             .replace("<h2>Contents</h2>", "")
-            // The TOC title should not be a h2
+            // The Resolutions title should not be a h2
             .replace("<h2>Summary of resolutions</h2>", "")
             // The nav id value should be removed
             .replace("<nav id=toc>", "<nav>")
             // References should not be relative
-            .replace(/href="#/g, `href="${entry.url}#`)
+            .replace(/href="#/g, `target="_blank" href="${entry.url}#`)
             ;
     };
     return cleanupData;
