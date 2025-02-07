@@ -1,15 +1,43 @@
-import { URL, APIUrl, HTMLUrl, Minutes, DisplayedData, GroupedData, ignoredFiles } from "./common.ts";
+import { MiniDOM } from './minidom.ts';
+
+/** GitHub API URL to get to the minutes in a specific WG */
+const APIUrl: string  = "https://api.github.com/repos/w3c/{wg}/contents/minutes";
+
+/** URL of the GitHub pages for a specific WG */
+const HTMLUrl: string = "https://w3c.github.io/{wg}/{path}";
+
+type URL = string;
+
+/** The data extracted from the minutes that is supposed to be displayed */
+interface DisplayedData {
+    /** The URL of the minutes */
+    url: URL;
+    /** Date of the minutes */
+    date: Date;
+    /** Array of TOC entries (can be HTML) */
+    toc: string[];
+    /** Array of Resolution entries entries (can be HTML) */
+    res: string[];
+}
+
+/** The data regrouped per years */
+export type GroupedData = Map<number, DisplayedData[]>;
+
+/** Files names that must be ignored in the directory of minutes, if there */
+const ignoredFiles: string[] = ["index.html", "resolutions.html"];
+
 
 /**
  * Get the URLs of all the minutes for a given WG.
  * 
- * (This is a github specific version for the PM WG. The goal is to be able, in time, to 
+ * (This is a GitHub specific version. The goal is to be able, in time, to 
  * exchange that against the W3C specific API.)
  * 
  * @param wg
  * @returns 
  */
-async function getMinutes(wg: string): Promise<Minutes[]> {
+async function getMinutes(wg: string): Promise<URL[]> {
+    // This is the final GitHUb API URL
     const apiUrl = APIUrl.replace("{wg}", wg);
 
     const ghResponse = await fetch(apiUrl);
@@ -18,30 +46,16 @@ async function getMinutes(wg: string): Promise<Minutes[]> {
         return [];
     }   
 
+    // deno-lint-ignore no-explicit-any
     const response = (await ghResponse.json()) as any[];
     
-    const sorted_data = response.sort((a: { name: string; }, b: { name: string; }) => {
-        if (a.name > b.name) return -1;
-        if (a.name < b.name) return 1;
-        else return 0;
-    });
-
-    // remove the index file, if it is there:
-    const final_data = sorted_data.filter((f: { name: string; }): boolean => !ignoredFiles.includes(f.name));
+    // remove the index files, if they are there:
+    const final_data = response.filter((f: { name: string; }): boolean => !ignoredFiles.includes(f.name));
 
     // deno-lint-ignore no-explicit-any
-    const links = final_data.map((entry: any): Minutes => {
-        // The current setup is such that the date is part of the filename.
-        const date = entry.name.split(".")[0];
-        return {
-            fname : entry.name,
-            url   : HTMLUrl.replace("{wg}", wg).replace("{path}", entry.path),
-            date  : new Date(date),
-        };
-    });
-
-    return links as Minutes[];
+    return final_data.map((entry: any): URL => HTMLUrl.replace("{wg}", wg).replace("{path}", entry.path));
 }
+
 
 /**
  * Get back the content from a URL (referring to an HTML file, presumably), 
@@ -50,104 +64,84 @@ async function getMinutes(wg: string): Promise<Minutes[]> {
  * @param url 
  * @returns 
  */
-async function getContent(url: URL): Promise<string[]> {
+async function getContent(url: URL): Promise<MiniDOM> {
     const response = await (await fetch(url)).text();
-    const content = response.split("\n");
+    const content = new MiniDOM(response);
     return content;
 }
 
 /* **************************************************************************************** */
-/*                     Handling the Data content of a single minutes file                    */
+/*                     Handling the Data content of a single minutes file                   */
 /* **************************************************************************************** */
 
-function cleanupDataFunc(entry: Minutes): (content: string) => string {
-    const cleanupData = (nav: string): string => {
-        return nav
-            // The TOC title should not be a h2
-            .replace("<h2>Contents</h2>", "")
-            // The Resolutions title should not be a h2
-            .replace("<h2>Summary of resolutions</h2>", "")
-            // The nav id value should be removed
-            .replace("<nav id=toc>", "<nav>")
-            // References should not be relative
-            .replace(/href="#/g, `target="_blank" href="${entry.url}#`)
-            ;
-    };
-    return cleanupData;
-}
-
 /**
- * Extract the Table of Contents from the content of a minutes file.
+ * Extract a list of entries from the content of a minutes file.
  * 
  * @param entry
  * @param content 
+ * @param selector - CSS selector to get to the list of entries
  * @returns 
  */
-function extractTOC(entry: Minutes, content: string[]): string[] {
-    const nav_begin_i: number = content.indexOf("<nav id=toc>");
+function extractListEntries(entry: URL, content: MiniDOM, selector: string): string[] {
+    const cleanupDataFunc = (entry: URL): ((content: string) => string) => {
+        const cleanupData = (nav: string): string => {
+            return nav
+                // References should not be relative
+                .replace(/href="#/g, `target="_blank" href="${entry}#`)
+                ;
+        };
+        return cleanupData;
+    }
 
-    if (nav_begin_i === -1) {
-        // console.log(">>> no nav");
+    const resLines: NodeListOf<Element> = content.querySelectorAll(selector);
+    if (resLines.length === 0) {
         return [];
     } else {
-        const nav_begin = content.slice(nav_begin_i);
-        const nav_end_i = nav_begin.indexOf("</nav>");
-        if (nav_end_i === -1) {
-            // console.log(">>> wrong nav");
-            return [];
-        } else {
-            const toc = nav_begin.slice(0, nav_end_i + 1);
-            return toc.map(cleanupDataFunc(entry)).filter((line: string) => line !== "");
-        }
-    }
+        return Array.from(resLines)
+            // Get the HTML line corresponding to an 'li' element
+            .map((line: Element) => line.innerHTML)
+            // Cleanup the line before returning it
+            .map(cleanupDataFunc(entry));
+    } 
 }
 
-function extractResolutions(entry: Minutes, content: string[]): string[] {
-    const res_begin_i: number = content.indexOf("<div id=ResolutionSummary>");
-    if (res_begin_i === -1) {
-        return [];
-    } else {
-        const res_begin = content.slice(res_begin_i);
-        const res_end_i = res_begin.indexOf("</div>");
-        if (res_end_i === -1) {
-            return [];
-        } else {
-            // Note that the minute HTML begins with the
-            // lines "<div id=ResolutionSummary"> and is followed by an "<h2>"
-            // These are removed, as well as the closing "</div>".
-            const output = res_begin.slice(1, res_end_i);
-            return output.map(cleanupDataFunc(entry)).filter((line: string) => line !== "");
-        }
-    }
-}
 
 /**
- * Get all TOCs with the respective date; it is one block that can 
+ * Get all TOCs and resolutions with the respective date; one block each that can 
  * be displayed in the generated HTML
  * 
- * @param data 
+ * @param minutes 
  * @returns 
  */
-// deno-lint-ignore require-await
-async function getAllTOC(data: Minutes[]): Promise<DisplayedData[]> {
-    const retrieveDisplayTOC = async (entry: Minutes): Promise<DisplayedData> => {
-        const content = await getContent(entry.url);
+async function getAllData(minutes: URL[]): Promise<DisplayedData[]> {
+    // Get the data for a single entry
+    const retrieveDisplayData = async (entry: URL): Promise<DisplayedData> => {
+        const content: MiniDOM = await getContent(entry);
+        const date_title = content.querySelector("header h2:first-of-type")?.textContent;
+        const date       = new Date(date_title ?? "1970-01-01");
         return {
-            url : entry.url,
-            date: entry.date,
-            toc: extractTOC(entry, content),
-            res: extractResolutions(entry, content),
+            url : entry,
+            date: date,
+            toc: extractListEntries(entry, content, "nav#toc ol li"),  
+            res: extractListEntries(entry, content, "div#ResolutionSummary ol li"), 
         };
     }
 
     // Gather all the Promises for a parallel execution
-    const promises = data.map(retrieveDisplayTOC);
-    return Promise.all(promises);
+    const promises = minutes.map(retrieveDisplayData);
+    const output = await Promise.all(promises);
+
+    // Sorting the output by date before returning it
+    return output.sort((a, b) => {
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+        else return 0;
+    });    
 }
 
 
 /**
- * Main entry point to get the TOCs grouped by year. The TOCs themselves are arrays of strings, in HTML format.
+ * Main entry point to get the Data grouped by year. The data themselves are arrays of strings, in HTML format.
  * 
  * @param wg 
  * @returns 
@@ -165,7 +159,9 @@ export async function getGroupedData(wg: string): Promise<GroupedData> {
         return groups;
     }
 
-    const minutes: Minutes[]       = await getMinutes(wg);
-    const display: DisplayedData[] = await getAllTOC(minutes);
+    // Get the references to all the minutes
+    const minutes: URL[]           = await getMinutes(wg);
+    // For each of the minutes, get the content.
+    const display: DisplayedData[] = await getAllData(minutes);
     return groupDisplayedDataByYear(display);
 }
