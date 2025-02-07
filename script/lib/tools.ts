@@ -30,8 +30,8 @@ const ignoredFiles: string[] = ["index.html", "resolutions.html"];
 /**
  * Get the URLs of all the minutes for a given WG.
  * 
- * (This is a GitHub specific version. The goal is to be able, in time, to 
- * exchange that against the W3C specific API.)
+ * This is a GitHub specific version. The goal is to be able, in time, to 
+ * exchange that against the W3C specific API.
  * 
  * @param wg
  * @returns 
@@ -54,20 +54,6 @@ async function getMinutes(wg: string): Promise<URL[]> {
 
     // deno-lint-ignore no-explicit-any
     return final_data.map((entry: any): URL => HTMLUrl.replace("{wg}", wg).replace("{path}", entry.path));
-}
-
-
-/**
- * Get back the content from a URL (referring to an HTML file, presumably), 
- * as an array of strings.
- *
- * @param url 
- * @returns 
- */
-async function getContent(url: URL): Promise<MiniDOM> {
-    const response = await (await fetch(url)).text();
-    const content = new MiniDOM(response);
-    return content;
 }
 
 /* **************************************************************************************** */
@@ -116,9 +102,15 @@ function extractListEntries(entry: URL, content: MiniDOM, selector: string): str
 async function getAllData(minutes: URL[]): Promise<DisplayedData[]> {
     // Get the data for a single entry
     const retrieveDisplayData = async (entry: URL): Promise<DisplayedData> => {
-        const content: MiniDOM = await getContent(entry);
+        // Get the minutes file as a text
+        const response   = await (await fetch(entry)).text();
+        // Parse the (HTML) text into a MiniDOM
+        const content    = new MiniDOM(response);
+
+        // Find the date of the minutes
         const date_title = content.querySelector("header h2:first-of-type")?.textContent;
         const date       = new Date(date_title ?? "1970-01-01");
+        
         return {
             url : entry,
             date: date,
@@ -129,7 +121,13 @@ async function getAllData(minutes: URL[]): Promise<DisplayedData[]> {
 
     // Gather all the Promises for a parallel execution
     const promises = minutes.map(retrieveDisplayData);
-    const output = await Promise.all(promises);
+
+    // Some of the promises might have failed, so we need to filter out the failed ones
+    // but we want to display everything we can...
+    const results = await Promise.allSettled(promises);
+    const output = results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
 
     // Sorting the output by date before returning it
     return output.sort((a, b) => {
