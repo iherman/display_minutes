@@ -61,7 +61,7 @@ async function getMinutes(wg: string): Promise<URL[]> {
 /* **************************************************************************************** */
 
 /**
- * Extract a list of entries from the content of a minutes file.
+ * Extract a list of entries from the content of a minutes file, using a CSS selector.
  * 
  * @param entry
  * @param content 
@@ -69,25 +69,24 @@ async function getMinutes(wg: string): Promise<URL[]> {
  * @returns 
  */
 function extractListEntries(entry: URL, content: MiniDOM, selector: string): string[] {
-    const cleanupDataFunc = (entry: URL): ((content: string) => string) => {
-        const cleanupData = (nav: string): string => {
-            return nav
-                // References should not be relative
-                .replace(/href="#/g, `target="_blank" href="${entry}#`)
-                ;
-        };
-        return cleanupData;
-    }
+    // There is only one cleanup operation for now, but it could be extended
+    const cleanupData = (nav: string): string => {
+        return nav
+            // References should not be relative
+            .replace(/href="#/g, `target="_blank" href="${entry}#`)
+            ;
+    };
 
     const resLines: NodeListOf<Element> = content.querySelectorAll(selector);
+
     if (resLines.length === 0) {
         return [];
     } else {
         return Array.from(resLines)
             // Get the HTML line corresponding to an 'li' element
             .map((line: Element) => line.innerHTML)
-            // Cleanup the line before returning it
-            .map(cleanupDataFunc(entry));
+            // Cleanup each the line before returning it
+            .map(cleanupData);
     } 
 }
 
@@ -110,7 +109,7 @@ async function getAllData(minutes: URL[]): Promise<DisplayedData[]> {
         // Find the date of the minutes
         const date_title = content.querySelector("header h2:first-of-type")?.textContent;
         const date       = new Date(date_title ?? "1970-01-01");
-        
+
         return {
             url : entry,
             date: date,

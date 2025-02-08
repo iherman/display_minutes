@@ -1,7 +1,11 @@
 import { getGroupedData, GroupedData } from "./lib/tools.ts";
 import { MiniDOM }                     from './lib/minidom.ts';
 import pretty                          from "npm:pretty";
+// Using the node:fs/promises module instead of Deno's built in i/o functions
+// if someone wants to run this script in a Node.js environment
+import * as fs                         from 'node:fs/promises';
 
+// Adapt it to your need: the working group repository name
 const wg = "pm-wg";
 
 /**
@@ -77,7 +81,7 @@ async function generateContent(
         output_file: string, 
         func: (document: MiniDOM, parent: Element, data: GroupedData) => void): Promise<void> {
     // get hold of the template file as a JSDOM
-    const template = await Deno.readTextFile(template_file);
+    const template = await fs.readFile(template_file, 'utf-8');
 
     // parse template into a DOM using JSDOM
     const document = new MiniDOM(template);
@@ -100,7 +104,7 @@ async function generateContent(
     const newRes = pretty(document.serialize());
 
     // Write the new index.html file
-    await Deno.writeTextFile(output_file, newRes);
+    await fs.writeFile(output_file, newRes);
 }
 
 
@@ -113,6 +117,7 @@ async function main() {
 
     // Get the data into the HTML templates and write the files
     // The functions are async, so we need to wait for all of them to finish
+    // hence this extra step with an array or promises
     const promises: Promise<void>[] = 
         [
             {
@@ -129,7 +134,7 @@ async function main() {
             },
         ]
         .map((entry) => generateContent(data, entry.template, entry.id, entry.output, entry.func));
-    await Promise.all(promises);
+    await Promise.allSettled(promises);
 }
 
 await main();
