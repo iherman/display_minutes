@@ -1,6 +1,7 @@
-import { MiniDOM }    from './minidom.ts';
-import { taskForces } from "./params.ts";
-import * as fs        from 'node:fs/promises';
+import { MiniDOM }              from './minidom.ts';
+import { taskForces, location } from "./params.ts";
+import * as fs                  from 'node:fs/promises';
+import * as path                from 'node:path';
 
 type FileName = string;
 
@@ -8,10 +9,10 @@ type FileName = string;
 interface DisplayedData {
     /** The File name of the minutes */
     fname: FileName;
+    /** The final path to the minutes, to be used for links */
+    location: FileName
     /** Date of the minutes */
     date: Date;
-    /** Title of the meeting */
-    title: string
     /** Array of TOC entries (can be HTML) */
     toc: string[];
     /** Array of Resolution entries entries (can be HTML) */
@@ -42,27 +43,6 @@ async function getMinutes(directory: string): Promise<FileName[]> {
 }
 
 /**
- * Get the title of the meeting from the file name.
- * 
- * @param fname 
- * @returns 
- */
-function getMeetingTitle(fname: FileName): string {
-    // Get the html part off the file name
-    const baseName = fname.split(".html")[0];
-
-    // Get the last part of the file name which may be the meeting category
-    const parts: string[] = baseName.split("-");
-    const name: string = parts.pop() ?? "default";
-    if (name === undefined) {
-        // Although this may not happen, better keep the TS compiler happy
-        return taskForces["default"];
-    } else {
-        return taskForces[name] ?? taskForces["default"];
-    }
-}
-
-/**
  * Get all TOCs and resolutions with the respective date; one block each that can 
  * be displayed in the generated HTML
  * 
@@ -78,7 +58,7 @@ async function getAllData(minutes: FileName[]): Promise<DisplayedData[]> {
         const cleanupData = (nav: string): string => {
             return nav
                 // References should not be relative
-                .replace(/href="#/g, `target="_blank" href="${fname}#`)
+                .replace(/href="#/g, `target="_blank" href="${path.join(location, path.basename(fname))}#`)
                 ;
         };
 
@@ -107,12 +87,14 @@ async function getAllData(minutes: FileName[]): Promise<DisplayedData[]> {
         const date_title :string | null | undefined  = content.querySelector("header h2:first-of-type")?.textContent;
         const date       = new Date(date_title ?? "1970-01-01");
 
+        // console.log(`Processing ${fname}, ${path.basename(fname)}, ${path.join(location, path.basename(fname))}`);
+
         return {
-            fname : fname,
-            date  : date,
-            title : `${getMeetingTitle(fname)} Meeting`,
-            toc   : extractListEntries(fname, content, "#toc ol li"),  
-            res   : extractListEntries(fname, content, "#ResolutionSummary ol li"), 
+            fname    : fname,
+            location : path.join(location, path.basename(fname)),
+            date     : date,
+            toc      : extractListEntries(fname, content, "#toc ol li"),  
+            res      : extractListEntries(fname, content, "#ResolutionSummary ol li"), 
         };
     }
 

@@ -16,8 +16,9 @@ import * as fs                                          from 'node:fs/promises';
 function tocHTML(document: MiniDOM, parent: Element, data: GroupedData, tf: string): void {
     const section = document.addChild(parent, 'section');
     section.setAttribute('id', tf);
-    const sectionTitle = taskForces[tf] ?? `Unknown taskforce ${tf}`;
-    document.addChild(section, 'h2', `${sectionTitle} meetings`);
+    const tfName = taskForces[tf] ?? `Unknown taskforce ${tf}`;
+    const sectionTitle = `${tfName} meetings`;
+    document.addChild(section, 'h2', sectionTitle);
     const ul = document.addChild(section, 'ul');
     let open_details = true;
     for (const [year, datum] of data) {
@@ -34,7 +35,7 @@ function tocHTML(document: MiniDOM, parent: Element, data: GroupedData, tf: stri
 
         for (const entry of datum) {
             const li_meeting = document.addChild(ul_meetings, 'li');
-            document.addChild(li_meeting, 'h4', `<a target="_blank" href="${entry.fname}">${entry.date.toDateString()}</a>`);
+            document.addChild(li_meeting, 'h4', `<a target="_blank" href="${entry.location}">${entry.date.toDateString()}</a>`);
             const details_meeting = document.addChild(li_meeting, 'details');
             document.addChild(details_meeting, 'summary', 'Agenda');
             const ul_toc = document.addChild(details_meeting, 'ul');
@@ -42,6 +43,12 @@ function tocHTML(document: MiniDOM, parent: Element, data: GroupedData, tf: stri
                 document.addChild(ul_toc, 'li', em)
             }
         }
+    }
+
+    // Add a TOC element to the section
+    const slot = document.getElementById('toc');
+    if (slot) {
+        document.addChild(slot, 'li', `<a href="#${tf}">${sectionTitle}</a>`);
     }
 }
 
