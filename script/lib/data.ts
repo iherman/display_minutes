@@ -1,6 +1,6 @@
-import { MiniDOM } from './minidom.ts';
-import { filenameToTitle } from "./params.ts";
-import * as fs     from 'node:fs/promises';
+import { MiniDOM }    from './minidom.ts';
+import { taskForces } from "./params.ts";
+import * as fs        from 'node:fs/promises';
 
 type FileName = string;
 
@@ -19,9 +19,12 @@ interface DisplayedData {
 }
 
 /** The data regrouped per years */
-export type GroupedData = Map<number, DisplayedData[]>;
+export type GroupedData   = Map<number, DisplayedData[]>;
+export type GroupedTFData = Map<string, GroupedData>;
 
-/** Files names that must be ignored in the directory of minutes, if there are present */
+/** 
+ * Files names that must be ignored in the directory of minutes, if there are present 
+ */
 const ignoredFiles: string[] = ["index.html", "resolutions.html"];
 
 /**
@@ -53,9 +56,9 @@ function getMeetingTitle(fname: FileName): string {
     const name: string = parts.pop() ?? "default";
     if (name === undefined) {
         // Although this may not happen, better keep the TS compiler happy
-        return filenameToTitle["default"];
+        return taskForces["default"];
     } else {
-        return filenameToTitle[name] ?? filenameToTitle["default"];
+        return taskForces[name] ?? taskForces["default"];
     }
 }
 
@@ -156,4 +159,43 @@ export async function getGroupedData(directory: string): Promise<GroupedData> {
     // For each of the minutes, get the content.
     const display: DisplayedData[] = await getAllData(minutes);
     return groupDisplayedDataByYear(display);
+}
+
+/**
+ * Take care of task forces and group the data accordingly.
+ * 
+ * @param groupedData 
+ * @returns 
+ */
+export async function getTFGroupedData(directory: string): Promise<GroupedTFData> {
+    const groupedData = await getGroupedData(directory);
+    const groups: GroupedTFData = new Map<string, GroupedData>();
+
+    for (const tf of Object.keys(taskForces)) {
+        const group = new Map<number, DisplayedData[]>();
+        let groupEmpty = true;
+        for (const [year, data] of groupedData) {
+            const filteredData = data.filter((entry: DisplayedData): boolean =>  {
+                const baseName = entry.fname.split(".html")[0];
+                const parts = baseName.split("-");
+                // the convention is that the last part is the task force identifier
+                // which follows the the date string
+                if (parts.length === 3 && tf === "default") {
+                    // if the task force is not specified, we take the default
+                    return true;
+                } else {
+                    // if the task force is specified, we take that one
+                    return parts[parts.length - 1] === tf;  
+                }
+            })
+            if (filteredData.length > 0) {
+                group.set(year, filteredData);
+                groupEmpty = false;
+            }
+        }
+        if (!groupEmpty) {
+            groups.set(tf, group);
+        }
+    }
+    return groups;
 }
