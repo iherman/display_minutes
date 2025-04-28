@@ -15,9 +15,5 @@ export const location = "../minutes";
 export const taskForces: { [key: string]: string; } = {
     "default" : "Working group",
     "f2f"     : "Group face to face",
-    "a11y"    : "Accessibility task force",
-    "ann"     : "EPUB annotations task force",
-    "dc"      : "Digital comics task force",
-    "fxl"     : "Fixed layout accessibility task force",
 };
 
