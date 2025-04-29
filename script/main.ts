@@ -144,8 +144,8 @@ async function generateContent(
 
     // Go through the taskforces and generate the content for each. Note the sorting of the task force names
     // to get a consistent order. The default and f2f are always first, the rest is sorted alphabetically.
-    const tfList = Object.keys(taskForces).filter(tf => tf !== "default" && tf !== "f2f").sort();
-    const results: boolean[] = ["default", "f2f", ...tfList].map((tf): boolean =>  {
+    const tfList = Object.keys(taskForces).filter(tf => tf !== "" && tf !== "f2f").sort();
+    const results: boolean[] = ["", "f2f", ...tfList].map((tf): boolean =>  {
         const tfData = data.get(tf);
         if (tfData !== undefined) {
             return generationFunction(document, slot, tfData, tf);

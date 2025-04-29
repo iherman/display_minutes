@@ -164,7 +164,7 @@ export async function getTFGroupedData(directory: string, location: string, task
                 const parts = baseName.split("-");
                 // the convention is that the last part is the task force identifier
                 // which follows the the date string
-                if (parts.length === 3 && tf === "default") {
+                if (parts.length === 3 && tf === "") {
                     // if the task force is not specified, we take the default
                     return true;
                 } else {

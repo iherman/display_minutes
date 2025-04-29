@@ -17,7 +17,7 @@ The `params.json` in the top directory contains that parameters that can be set.
 - `location`: refers to the directory where the minutes are within the repo, as a relative file path ***compared to the final location of the generated index and resolution files***.
 - `taskForces`: an object mapping set of task force identifiers mapped onto the respective task force titles. The task force identifiers are used in the file names convention for the minutes:  `YYYY-MM-DD-suffix` where `suffix` (that may be missing) specifies that the minutes come from a particular task force call, a F2F call, or (in the case of a missing suffix) “just” the group's regular call. The script displays the minutes and the resolutions of these task forces in separate sections.
 
-    The task force list _MUST_ include the `default` and `f2f` identifiers. `default` refers to the missing suffix, i.e., the group's regular calls; `f2f` is reserved for the face-to-face meetings.
+    The task force list _MUST_ include the `""` (empty string) and `f2f` identifiers. The empty string refers to the missing suffix, i.e., the group's regular calls; `f2f` is reserved for the face-to-face meetings.
 - `index_template`: position of the template file for the meeting index, as a relative file path ***compared to the location of the script***. 
 - `index_template_id`: the `@id` value of an HTML `div` element where the list of minutes should be added in the template.
 - `resolution_template`: position of the template file for the meeting resolutions, as a relative file path ***compared to the location of the script***. 
