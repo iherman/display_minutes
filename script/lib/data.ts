@@ -1,5 +1,4 @@
 import { MiniDOM }              from './minidom.ts';
-import { taskForces, location } from "./params.ts";
 import * as fs                  from 'node:fs/promises';
 import * as path                from 'node:path';
 
@@ -49,7 +48,7 @@ async function getMinutes(directory: string): Promise<FileName[]> {
  * @param minutes 
  * @returns 
  */
-async function getAllData(minutes: FileName[]): Promise<DisplayedData[]> {
+async function getAllData(minutes: FileName[], location: string): Promise<DisplayedData[]> {
     /*
      * Extract a list of <li> entries from the content of a minutes file, using a CSS selector.
      */
@@ -120,10 +119,11 @@ async function getAllData(minutes: FileName[]): Promise<DisplayedData[]> {
 /**
  * Main entry point to get the Data grouped by year. The data themselves are arrays of strings, in HTML format.
  * 
- * @param directory 
+ * @param directory - dirctory of the minutes, relative to the script
+ * @param location  - location of the minutes, relative to the generated HTML index files
  * @returns 
  */
-export async function getGroupedData(directory: string): Promise<GroupedData> {
+export async function getGroupedData(directory: string, location: string): Promise<GroupedData> {
     const groupDisplayedDataByYear = (data: DisplayedData[]): GroupedData => {
         const groups: GroupedData = new Map<number, DisplayedData[]>();
         for (const entry of data) {
@@ -139,18 +139,20 @@ export async function getGroupedData(directory: string): Promise<GroupedData> {
     // Get the references to all the minutes
     const minutes: FileName[]      = await getMinutes(directory);
     // For each of the minutes, get the content.
-    const display: DisplayedData[] = await getAllData(minutes);
+    const display: DisplayedData[] = await getAllData(minutes, location);
     return groupDisplayedDataByYear(display);
 }
 
 /**
  * Take care of task forces and group the data accordingly.
  * 
- * @param groupedData 
+ * @param directory - dirctory of the minutes, relative to the script 
+ * @param location  - location of the minutes, relative to the generated HTML index files 
+ * @param taskForces - the task forces to be used for the grouping
  * @returns 
  */
-export async function getTFGroupedData(directory: string): Promise<GroupedTFData> {
-    const groupedData = await getGroupedData(directory);
+export async function getTFGroupedData(directory: string, location: string, taskForces: { [key: string]: string; }): Promise<GroupedTFData> {
+    const groupedData = await getGroupedData(directory, location);
     const groups: GroupedTFData = new Map<string, GroupedData>();
 
     for (const tf of Object.keys(taskForces)) {

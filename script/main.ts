@@ -1,10 +1,25 @@
+/**
+ * This script generates the index.html and resolutions.html files from the data
+ * in the directory specified in the params.json file.
+ * It uses the template files in the templates directory and fills them with the data
+ * from the data directory.
+ * The script uses the MiniDOM library to parse and manipulate the HTML files.
+ * The script is written in TypeScript and uses Deno to run.
+ * The script is designed to be run from the command line and takes the directory
+ * as an argument. If no directory is specified, it uses the default directory
+ * specified in the params.json file.  
+ */
+
 import { GroupedData, getTFGroupedData, GroupedTFData } from "./lib/data.ts";
 import { MiniDOM }                                      from './lib/minidom.ts';
-import { directory, taskForces }                        from "./lib/params.ts";
 import pretty                                           from "npm:pretty";
 // Using the node:fs/promises module instead of Deno's built in i/o functions
 // It makes it easier if someone wants to convert and this script in Node.js
 import * as fs                                          from 'node:fs/promises';
+
+import params from "./params.json" with { type: "json" };
+// The type of the data we are working with
+const taskForces = params.taskForces as { [key: string]: string; };
 
 /**
  * Generate the TOC HTML content.
@@ -112,6 +127,10 @@ async function generateContent(
         output_file: string,
         emptyMessage: string = "No data available",
         generationFunction: (document: MiniDOM, parent: Element, data: GroupedData, tf: string) => boolean): Promise<void> {
+    if (id === undefined || id === null) { 
+        console.log(`No id specified for the template ${template_file}`);
+        throw new Error(`No id specified for the template ${template_file}`);
+    }
     // get hold of the template file as a JSDOM
     const template = await fs.readFile(template_file, 'utf-8');
 
@@ -120,7 +139,8 @@ async function generateContent(
 
     const slot = document.getElementById(id);
 
-    if (!slot) {
+    if (slot === null || slot === undefined) {
+        console.log(`Could not find the right slot ${id} in the template`);
         throw new Error(`Could not find the right slot ${id} in the template`);
     }
 
@@ -158,9 +178,9 @@ async function generateContent(
 /**
  * Main entry point to generate the HTML files.
  */
-async function main(dir: string = directory) {
+async function main() {
     // Get hold of the data to work on
-    const tfData: GroupedTFData = await getTFGroupedData(dir);
+    const tfData: GroupedTFData = await getTFGroupedData(params.directory, params.location, taskForces);
 
     // Get the data into the HTML templates and write the files
     // The functions are async, so we need to wait for all of them to finish
@@ -168,15 +188,15 @@ async function main(dir: string = directory) {
     const promises: Promise<void>[] = 
         [
             {
-                template           : "./templates/index_template.html", 
-                id                 : "list-of-calls", 
+                template           : params.index_template, 
+                id                 : params.index_template_id, 
                 output             : "index.html",
                 emptyMessage       : "No meeting records available.", 
                 generationFunction : tocHTML,
             },
             {
-                template           : "./templates/resolutions_template.html", 
-                id                 : "list-of-resolutions", 
+                template           : params.resolution_template, 
+                id                 : params.resolution_template_id, 
                 output             : "resolutions.html",
                 emptyMessage       : "No resolutions have been taken.",  
                 generationFunction : resolutionHTML,
