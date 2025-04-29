@@ -128,7 +128,6 @@ async function generateContent(
         emptyMessage: string = "No data available",
         generationFunction: (document: MiniDOM, parent: Element, data: GroupedData, tf: string) => boolean): Promise<void> {
     if (id === undefined || id === null) { 
-        console.log(`No id specified for the template ${template_file}`);
         throw new Error(`No id specified for the template ${template_file}`);
     }
     // get hold of the template file as a JSDOM
@@ -140,7 +139,6 @@ async function generateContent(
     const slot = document.getElementById(id);
 
     if (slot === null || slot === undefined) {
-        console.log(`Could not find the right slot ${id} in the template`);
         throw new Error(`Could not find the right slot ${id} in the template`);
     }
 
@@ -202,7 +200,18 @@ async function main() {
                 generationFunction : resolutionHTML,
             },
         ].map((entry) => generateContent(tfData, entry.template, entry.id, entry.output, entry.emptyMessage, entry.generationFunction));
-    await Promise.allSettled(promises);
+    const results = await Promise.allSettled(promises);
+
+    if (results[0].status === "rejected") {
+        console.error(`Error generating the index file: ${results[0].reason}`);
+    } else {
+        console.log(`Index file generated successfully.`);
+    }
+    if (results[1].status === "rejected") {
+        console.error(`Error generating the resolution file: ${results[1].reason}`);
+    } else {
+        console.log(`Resolution file generated successfully.`);
+    }
 }
 
 await main();
