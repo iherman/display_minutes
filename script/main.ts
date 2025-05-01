@@ -12,14 +12,11 @@
 
 import { GroupedData, getTFGroupedData, GroupedTFData } from "./lib/data.ts";
 import { MiniDOM }                                      from './lib/minidom.ts';
+import { TaskForces, Params, getParams }                from './lib/params.ts';
 import pretty                                           from "npm:pretty";
 // Using the node:fs/promises module instead of Deno's built in i/o functions
-// It makes it easier if someone wants to convert and this script in Node.js
+// It makes it easier if someone wants to convert this script in Node.js
 import * as fs                                          from 'node:fs/promises';
-
-import params from "./params.json" with { type: "json" };
-// The type of the data we are working with
-const taskForces = params.taskForces as { [key: string]: string; };
 
 /**
  * Generate the TOC HTML content.
@@ -28,7 +25,7 @@ const taskForces = params.taskForces as { [key: string]: string; };
  * @param parent 
  * @param data 
  */
-function tocHTML(document: MiniDOM, parent: Element, data: GroupedData, tf: string): boolean {
+function tocHTML(document: MiniDOM, taskForces: TaskForces, parent: Element, data: GroupedData, tf: string): boolean {
     if (data.size === 0) {
         // No data for this taskforce, so we skip it
         return false;
@@ -79,7 +76,7 @@ function tocHTML(document: MiniDOM, parent: Element, data: GroupedData, tf: stri
  * @param parent 
  * @param data 
  */
-function resolutionHTML(document: MiniDOM, parent: Element, data: GroupedData, tf: string): boolean {
+function resolutionHTML(document: MiniDOM, taskForces: TaskForces, parent: Element, data: GroupedData, tf: string): boolean {
     if (data.size === 0) {
         // No data for this taskforce, so we skip it
         return false;
@@ -121,12 +118,13 @@ function resolutionHTML(document: MiniDOM, parent: Element, data: GroupedData, t
  * @param generationFunction - The content generation function
  */
 async function generateContent(
-        data: GroupedTFData, 
+        data: GroupedTFData,
+        taskForces: TaskForces,
         template_file: string, 
         id: string, 
         output_file: string,
         emptyMessage: string = "No data available",
-        generationFunction: (document: MiniDOM, parent: Element, data: GroupedData, tf: string) => boolean): Promise<void> {
+        generationFunction: (document: MiniDOM, taskForces: TaskForces, parent: Element, data: GroupedData, tf: string) => boolean): Promise<void> {
     if (id === undefined || id === null) { 
         throw new Error(`No id specified for the template ${template_file}`);
     }
@@ -148,7 +146,7 @@ async function generateContent(
     const results: boolean[] = ["", "f2f", ...tfList].map((tf): boolean =>  {
         const tfData = data.get(tf);
         if (tfData !== undefined) {
-            return generationFunction(document, slot, tfData, tf);
+            return generationFunction(document, taskForces, slot, tfData, tf);
         } else {
             return false;
         }
@@ -178,6 +176,8 @@ async function generateContent(
  */
 async function main() {
     // Get hold of the data to work on
+    const params: Params = await getParams();
+    const taskForces: TaskForces = params.taskForces;
     const tfData: GroupedTFData = await getTFGroupedData(params.directory, params.location, taskForces);
 
     // Get the data into the HTML templates and write the files
@@ -199,7 +199,7 @@ async function main() {
                 emptyMessage       : "No resolutions have been taken.",  
                 generationFunction : resolutionHTML,
             },
-        ].map((entry) => generateContent(tfData, entry.template, entry.id, entry.output, entry.emptyMessage, entry.generationFunction));
+        ].map((entry) => generateContent(tfData, taskForces, entry.template, entry.id, entry.output, entry.emptyMessage, entry.generationFunction));
     const results = await Promise.allSettled(promises);
 
     if (results[0].status === "rejected") {

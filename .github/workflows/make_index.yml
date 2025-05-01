@@ -36,7 +36,6 @@ jobs:
         # Details depend on where the script is located
         run: |
           (cd script; deno run -A main.ts)
-          rm script/deno.lock
           cp script/index.html minutes/index.html
           cp script/resolutions.html minutes/resolutions.html
       - name: Setup Github Pages

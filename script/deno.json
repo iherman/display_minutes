@@ -1,15 +1,6 @@
 {
   "description": "Generation of index and resolutions' files for W3C WG/IG minutes.",
-  "version": "1.0.0.",
-  "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "dom.asynciterable",
-      "esnext",
-      "deno.ns"
-    ]
-  },
+  "version": "2.0.0.",
   "fmt": {
     "useTabs": true,
     "lineWidth": 120,
@@ -17,6 +8,6 @@
     "proseWrap": "preserve"
   },
   "tasks": {
-    "run" : "deno run --allow-net --allow-read --allow-write --allow-env main.ts"
+    "run" : "deno run --allow-sys --allow-read --allow-write --allow-env main.ts"
   }
 }
