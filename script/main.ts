@@ -13,7 +13,7 @@
 import { GroupedData, getTFGroupedData, GroupedTFData } from "./lib/data.ts";
 import { MiniDOM }                                      from './lib/minidom.ts';
 import { TaskForces, Params, getParams }                from './lib/params.ts';
-import pretty                                           from "npm:pretty";
+import pretty                                           from "npm:pretty@2.0.0";
 // Using the node:fs/promises module instead of Deno's built in i/o functions
 // It makes it easier if someone wants to convert this script in Node.js
 import * as fs                                          from 'node:fs/promises';

@@ -1,4 +1,4 @@
-import { JSDOM } from 'npm:jsdom';
+import { JSDOM } from 'npm:jsdom@26.1.0';
 
 /**
  * A thin layer on top of the regular DOM Document. Necessary to "hide" the differences 
