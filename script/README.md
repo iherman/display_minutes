@@ -82,6 +82,8 @@ jobs:
           deno-version: v2.x
       - name: Generate the index files
         # Details depend on where the script is located
+        # Alteranatively, you can also do a "deno run -A jsr:@iherman/display-minutes"
+        # ie, without installing the script locally!
         run: |
           (cd script; deno run -A main.ts)
           mv script/index.html minutes/index.html
