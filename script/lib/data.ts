@@ -1,5 +1,4 @@
 import { MiniDOM }              from './minidom.ts';
-import * as fs                  from 'node:fs/promises';
 import * as path                from 'node:path';
 
 type FileName = string;
@@ -36,9 +35,13 @@ const ignoredFiles: string[] = ["index.html", "resolutions.html"];
  * @returns 
  */
 async function getMinutes(directory: string): Promise<FileName[]> {
-    return (await fs.readdir(directory))
-        .filter(file => !ignoredFiles.includes(file))   
-        .map(file => `${directory}/${file}`);
+    const files: FileName[] = [];
+    for await (const entry of Deno.readDir(directory)) {
+        if (entry.isFile && !ignoredFiles.includes(entry.name)) {
+            files.push(`${directory}/${entry.name}`)
+        }
+    }
+    return files;
 }
 
 /**
@@ -78,7 +81,7 @@ async function getAllData(minutes: FileName[], location: string): Promise<Displa
     // for a parallel execution via Promise.allSettled.
     const retrieveDisplayData = async (fname: FileName): Promise<DisplayedData> => {
         // Get the minutes file as a text
-        const response = await fs.readFile(fname, "utf-8");
+        const response = await Deno.readTextFile(fname);
         // Parse the (HTML) text into a MiniDOM
         const content  = new MiniDOM(response);
 
@@ -119,7 +122,7 @@ async function getAllData(minutes: FileName[], location: string): Promise<Displa
 /**
  * Main entry point to get the Data grouped by year. The data themselves are arrays of strings, in HTML format.
  * 
- * @param directory - dirctory of the minutes, relative to the script
+ * @param directory - directory of the minutes, relative to the script
  * @param location  - location of the minutes, relative to the generated HTML index files
  * @returns 
  */

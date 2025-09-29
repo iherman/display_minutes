@@ -2,11 +2,6 @@
  * This file contains the types used for the parameters in the external json files
  * in the script.
  */
-// Using node's modules instead of Deno's built in i/o functions
-// It makes it easier if someone wants to convert this script in Node.js
-import * as fs from 'node:fs/promises';
-import process from 'node:process';
-
 const defaultParams: string = "params.json";
 
 /** Type to define task forces */
@@ -25,19 +20,25 @@ export interface TaskForces {
 /** Minimum parameter file */
 interface MinimumParams {
     /** Location of the minutes, relative to the location of the script itself */
-    directory: string;
+    directory:              string;
+
     /** Location of the minutes, relative to the final place of the generated HTML files */
-    location: string;
+    location:               string;
+
     /** Location of the template file for the index, relative to the location of the script itself */
-    index_template: string;
+    index_template:         string;
+
     /** ID of the slot in the index template where the data should be inserted */
-    index_template_id: string;
+    index_template_id:      string;
+
     /** Location of the template file for the resolution file, relative to the location of the script itself */
-    resolution_template: string;
+    resolution_template:    string;
+
     /** ID of the slot in the resolution template where the data should be inserted */
     resolution_template_id: string;
+
     /** The task force data */
-    taskForces: TaskForces;
+    taskForces:             TaskForces;
 }
 
 /** Just to make type future proof if we need to add more parameters */
@@ -57,27 +58,23 @@ export type Params = MinimumParams & { [key: string]: string; };
 export async function getParams(): Promise<Params> {
     const fname = ((): string => {
         // Check if the user has provided a file name
-        if (process.argv.length > 2) {
+        if (Deno.args.length > 0) {
             // If the user has provided a file name, use it
-            return process.argv[2];
-        } else if (process.env.DM_PARAMS) {
-            // If the user has provided a file name in the environment variable, use it
-            return process.env.DM_PARAMS;
+            return Deno.args[0];
         } else {
-            // Otherwise, use the default file name
-            return defaultParams;
+            return Deno.env.get("DM_Params") || defaultParams;
         }
     })();
 
     console.log('Using params file:', fname);
     // Check if the file exists
     try {
-        await fs.access(fname);
+        await Deno.stat(fname);
     } catch (_err) {
         throw new Error(`The file ${fname} does not exist. Please provide a valid file name as the argument or set the DM_PARAMS environment variable.`);
     }
 
-    const content = await fs.readFile(fname, 'utf-8');
+    const content = await Deno.readTextFile(fname);
     const params = JSON.parse(content);
     return params;
 }

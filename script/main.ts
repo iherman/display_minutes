@@ -10,13 +10,10 @@
  * specified in the params.json file.  
  */
 
-import { GroupedData, getTFGroupedData, GroupedTFData } from "./lib/data.ts";
-import { MiniDOM }                                      from './lib/minidom.ts';
-import { TaskForces, Params, getParams }                from './lib/params.ts';
-import pretty                                           from "npm:pretty@2.0.0";
-// Using the node:fs/promises module instead of Deno's built in i/o functions
-// It makes it easier if someone wants to convert this script in Node.js
-import * as fs                                          from 'node:fs/promises';
+import { type GroupedData, getTFGroupedData, type GroupedTFData } from "./lib/data.ts";
+import { MiniDOM }                                                from './lib/minidom.ts';
+import { type TaskForces, type Params, getParams }                from './lib/params.ts';
+import pretty                                                     from "npm:pretty@2.0.0";
 
 /**
  * Generate the TOC HTML content.
@@ -129,7 +126,7 @@ async function generateContent(
         throw new Error(`No id specified for the template ${template_file}`);
     }
     // get hold of the template file as a JSDOM
-    const template = await fs.readFile(template_file, 'utf-8');
+    const template = await Deno.readTextFile(template_file);
 
     // parse template into a DOM using JSDOM
     const document = new MiniDOM(template);
@@ -167,12 +164,12 @@ async function generateContent(
     const newRes = pretty(document.serialize());
 
     // Write the new index.html file
-    await fs.writeFile(output_file, newRes);
+    await Deno.writeTextFile(output_file, newRes);
 }
 
 
 /**
- * Main entry point to generate the HTML files.
+ * Main entry point to generate the index and resolution files.
  */
 async function main() {
     // Get hold of the data to work on
