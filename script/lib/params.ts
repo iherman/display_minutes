@@ -37,6 +37,9 @@ interface MinimumParams {
     /** ID of the slot in the resolution template where the data should be inserted */
     resolution_template_id: string;
 
+    /** Location of the nickname mapping file */
+    nicknames ?:            string;
+
     /** The task force data */
     taskForces:             TaskForces;
 }

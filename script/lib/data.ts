@@ -1,7 +1,7 @@
-import { MiniDOM }              from './minidom.ts';
-import * as path                from 'node:path';
+import { MiniDOM } from './minidom.ts';
+import * as path   from "jsr:@std/path";
 
-type FileName = string;
+export type FileName = string;
 
 /** The data extracted from the minutes that is supposed to be displayed */
 interface DisplayedData {
@@ -34,7 +34,7 @@ const ignoredFiles: string[] = ["index.html", "resolutions.html"];
  * @param directory
  * @returns 
  */
-async function getMinutes(directory: string): Promise<FileName[]> {
+export async function getMinutes(directory: string): Promise<FileName[]> {
     const files: FileName[] = [];
     for await (const entry of Deno.readDir(directory)) {
         if (entry.isFile && !ignoredFiles.includes(entry.name)) {

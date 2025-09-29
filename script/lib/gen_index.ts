@@ -10,10 +10,10 @@
  * specified in the params.json file.  
  */
 
-import { type GroupedData, getTFGroupedData, type GroupedTFData } from "./lib/data.ts";
-import { MiniDOM }                                                from './lib/minidom.ts';
-import { type TaskForces, type Params, getParams }                from './lib/params.ts';
-import pretty                                                     from "npm:pretty@2.0.0";
+import { type GroupedData, getTFGroupedData, type GroupedTFData } from "./data.ts";
+import { MiniDOM }                                                from './minidom.ts';
+import { type TaskForces, type Params, getParams }                from './params.ts';
+import pretty                                                     from 'pretty';
 
 /**
  * Generate the TOC HTML content.
@@ -171,7 +171,7 @@ async function generateContent(
 /**
  * Main entry point to generate the index and resolution files.
  */
-async function main() {
+export async function gen_index() {
     // Get hold of the data to work on
     const params: Params = await getParams();
     const taskForces: TaskForces = params.taskForces;
@@ -210,5 +210,3 @@ async function main() {
         console.log(`Resolution file generated successfully.`);
     }
 }
-
-await main();
