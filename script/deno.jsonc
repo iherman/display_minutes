@@ -4,8 +4,8 @@
   "version": "2.1.0",
 
   "exports": {
-    ".": "./run_all.ts",
-    "./index": "./run_index.ts",
+    ".": "./run_index.ts",
+    "./full": "./run_all.ts",
     "./nicknames": "./run_nicknames.ts"
   },
 
@@ -34,9 +34,9 @@
     "full": "deno run --allow-sys --allow-read --allow-write --allow-env run_all.ts",
 
     // Test the JSR version of the three above
-    "remote_index": "deno run --allow-sys --allow-read --allow-write --allow-env jsr:@iherman/display-minutes/index",
+    "remote_index": "deno run --allow-sys --allow-read --allow-write --allow-env jsr:@iherman/display-minutes",
     "remote_nicks": "deno run --allow-sys --allow-read --allow-write --allow-env jsr:@iherman/display-minutes/nicknames",
-    "remote_all"  : "deno run --allow-sys --allow-read --allow-write --allow-env jsr:@iherman/display-minutes"
+    "remote_all"  : "deno run --allow-sys --allow-read --allow-write --allow-env jsr:@iherman/display-minutes/full"
   },
   "license": "W3C-20230101"
 }

@@ -156,7 +156,7 @@ export async function handle_nicknames(): Promise<void> {
         const nicknames: Nicknames = JSON.parse(await Deno.readTextFile(params.nicknames)) as Nicknames;
         const minutes: FileName[] = await getMinutes(params.directory);
  
-        const minutesPromises: Promise<void>[] = minutes.map((minute: FileName) => oneFile(minute, nicknames, minute.replace("minutes", "test")));
+        const minutesPromises: Promise<void>[] = minutes.map((minute: FileName) => oneFile(minute, nicknames));
         // const minutesPromises = [oneFile('../minutes/2023-08-04-fxl.html', nicknames, '../minutes/2023-08-04-fxl.html'.replace("minutes", "test"))]
 
         // Run the minute handling in parallel. If one fails, be it, we just forget about the file...
