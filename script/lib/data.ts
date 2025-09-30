@@ -1,5 +1,5 @@
 import { MiniDOM } from './minidom.ts';
-import * as path   from "jsr:@std/path";
+import * as path   from "path";
 
 export type FileName = string;
 

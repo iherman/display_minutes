@@ -19,7 +19,8 @@
   // To make the compiler/beautifiers happy the versioned dependencies are put here
   "imports": {
     "pretty" : "npm:pretty@2.0.0",
-    "jsdom"  : "npm:jsdom@26.1.0"
+    "jsdom"  : "npm:jsdom@26.1.0",
+    "path"   : "jsr:@std/path@1.1.2"
   },
 
   "tasks": {
