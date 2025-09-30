@@ -35,7 +35,7 @@ jobs:
       - name: Generate the index files
         # Details depend on where the script is located
         run: |
-          (cd script; deno run -A main.ts)
+          (cd script; deno run -A run_all.ts)
           cp script/index.html minutes/index.html
           cp script/resolutions.html minutes/resolutions.html
       - name: Setup Github Pages
