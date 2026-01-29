@@ -155,7 +155,7 @@ export async function handle_nicknames(): Promise<void> {
         const minutes: FileName[] = await getMinutes(params.directory);
 
         const minutesPromises: Promise<void>[] = minutes.map((minute: FileName) => oneFile(minute, nicknames));
-        // const minutesPromises = [oneFile('../minutes/2025-09-25.html', nicknames, '../minutes/2025-09-25.html'.replace("minutes", "test"))]
+        // const minutesPromises = [oneFile('../minutes/2026-01-29.html', nicknames, '../minutes/2026-01-29.html'.replace("minutes", "test"))]
 
         // Run the minute handling in parallel. If one fails, be it, we just forget about the file...
         await Promise.allSettled(minutesPromises);
