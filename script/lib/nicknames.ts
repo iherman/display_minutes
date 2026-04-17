@@ -3,10 +3,11 @@
  *
  */
 
-import { type Params, getParams }    from './params.ts';
-import { type FileName, getMinutes } from "./data.ts";
+import { type Params, getParams                    } from './params.ts';
+import { type FileName, getMinutes, type Nicknames } from "./data.ts";
+import { convert, type UserNick                    } from "./nick_convert.ts";
 
-type Nicknames = Record<string,string> ;
+// type Nicknames = Record<string,string> ;
 
 // special lines:
 
@@ -145,17 +146,24 @@ async function oneFile(input: FileName, nicknames: Record<string, string>, out: 
  * Runner on update minutes' function on all files in parallel
  */
 export async function handle_nicknames(): Promise<void> {
-
     const params: Params = await getParams();
     if (!params.nicknames) {
         console.error("No nickname mapping file has been provided.")
     } else {
-        // Get hold of the nicknames
-        const nicknames: Nicknames = JSON.parse(await Deno.readTextFile(params.nicknames)) as Nicknames;
+        // Get hold of the nicknames. If the input file is user friendly, that must be
+        // converted first.
+        const nicknames: Nicknames = await (async (fname: FileName): Promise<Nicknames> => {
+             if (params?.user_friendly === true) {
+                const user_nick = JSON.parse(await Deno.readTextFile(fname)) as UserNick[];
+                return convert(user_nick);
+            } else {
+                return JSON.parse(await Deno.readTextFile(fname)) as Nicknames;
+            }
+        })(params.nicknames);
         const minutes: FileName[] = await getMinutes(params.directory);
 
-        const minutesPromises: Promise<void>[] = minutes.map((minute: FileName) => oneFile(minute, nicknames));
-        // const minutesPromises = [oneFile('../minutes/2026-01-29.html', nicknames, '../minutes/2026-01-29.html'.replace("minutes", "test"))]
+        // const minutesPromises: Promise<void>[] = minutes.map((minute: FileName) => oneFile(minute, nicknames));
+        const minutesPromises = [oneFile('../minutes/2026-01-29.html', nicknames, '../minutes/2026-01-29.html'.replace("minutes", "test"))]
 
         // Run the minute handling in parallel. If one fails, be it, we just forget about the file...
         await Promise.allSettled(minutesPromises);

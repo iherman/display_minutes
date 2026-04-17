@@ -17,22 +17,27 @@ interface DisplayedData {
     res: string[];
 }
 
+/**
+ * Simplified nickname mapping structure
+ */
+export type Nicknames = Record<string, string>;
+
 /** The data regrouped per years */
 export type GroupedData   = Map<number, DisplayedData[]>;
 export type GroupedTFData = Map<string, GroupedData>;
 
-/** 
- * Files names that must be ignored in the directory of minutes, if there are present 
+/**
+ * Files names that must be ignored in the directory of minutes, if there are present
  */
 const ignoredFiles: string[] = ["index.html", "resolutions.html"];
 
 /**
  * Get the file names of all the minutes for a given WG.
  * The file names are relative to the directory.
- * 
- * 
+ *
+ *
  * @param directory
- * @returns 
+ * @returns
  */
 export async function getMinutes(directory: string): Promise<FileName[]> {
     const files: FileName[] = [];
@@ -45,11 +50,11 @@ export async function getMinutes(directory: string): Promise<FileName[]> {
 }
 
 /**
- * Get all TOCs and resolutions with the respective date; one block each that can 
+ * Get all TOCs and resolutions with the respective date; one block each that can
  * be displayed in the generated HTML
- * 
- * @param minutes 
- * @returns 
+ *
+ * @param minutes
+ * @returns
  */
 async function getAllData(minutes: FileName[], location: string): Promise<DisplayedData[]> {
     /*
@@ -95,8 +100,8 @@ async function getAllData(minutes: FileName[], location: string): Promise<Displa
             fname    : fname,
             location : path.join(location, path.basename(fname)),
             date     : date,
-            toc      : extractListEntries(fname, content, "#toc > ol > li"),  
-            res      : extractListEntries(fname, content, "#ResolutionSummary ol li"), 
+            toc      : extractListEntries(fname, content, "#toc > ol > li"),
+            res      : extractListEntries(fname, content, "#ResolutionSummary ol li"),
         };
     }
 
@@ -115,16 +120,16 @@ async function getAllData(minutes: FileName[], location: string): Promise<Displa
         if (a.date > b.date) return -1;
         if (a.date < b.date) return 1;
         else return 0;
-    });    
+    });
 }
 
 
 /**
  * Main entry point to get the Data grouped by year. The data themselves are arrays of strings, in HTML format.
- * 
+ *
  * @param directory - directory of the minutes, relative to the script
  * @param location  - location of the minutes, relative to the generated HTML index files
- * @returns 
+ * @returns
  */
 export async function getGroupedData(directory: string, location: string): Promise<GroupedData> {
     const groupDisplayedDataByYear = (data: DisplayedData[]): GroupedData => {
@@ -148,11 +153,11 @@ export async function getGroupedData(directory: string, location: string): Promi
 
 /**
  * Take care of task forces and group the data accordingly.
- * 
- * @param directory - dirctory of the minutes, relative to the script 
- * @param location  - location of the minutes, relative to the generated HTML index files 
+ *
+ * @param directory - dirctory of the minutes, relative to the script
+ * @param location  - location of the minutes, relative to the generated HTML index files
  * @param taskForces - the task forces to be used for the grouping
- * @returns 
+ * @returns
  */
 export async function getTFGroupedData(directory: string, location: string, taskForces: { [key: string]: string; }): Promise<GroupedTFData> {
     const groupedData = await getGroupedData(directory, location);
@@ -172,7 +177,7 @@ export async function getTFGroupedData(directory: string, location: string, task
                     return true;
                 } else {
                     // if the task force is specified, we take that one
-                    return parts[parts.length - 1] === tf;  
+                    return parts[parts.length - 1] === tf;
                 }
             })
             if (filteredData.length > 0) {

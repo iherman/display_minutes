@@ -11,7 +11,7 @@ export interface TaskForces {
      * is to have the file name ending with a dash and the identifier of the meeting.
      * The values are the strings to generate the reference to the meeting (the "Meeting" word
      * is added automatically).
-     * 
+     *
      * The "" and "f2f" values are required.
      */
     [key: string]: string;
@@ -37,8 +37,11 @@ interface MinimumParams {
     /** ID of the slot in the resolution template where the data should be inserted */
     resolution_template_id: string;
 
-    /** Location of the nickname mapping file */
+    /** Location of the nickname file, either user friendly or simple mapping */
     nicknames ?:            string;
+
+    /** Whether the nicknames is user-friendly or not */
+    user_friendly ?:        boolean;
 
     /** The task force data */
     taskForces:             TaskForces;
@@ -48,13 +51,13 @@ interface MinimumParams {
 export type Params = MinimumParams & { [key: string]: string; };
 
 /**
- * 
+ *
  * Function to get the parameters for the script. The sources for the parameters are:
- * 
+ *
  * 1. The first argument of the script or, if not provided
  * 2. The environment variable DM_PARAMS or
  * 3. The default file name `params.json`
- * 
+ *
  * @returns The parameters for the script
  * @throws If the file does not exist or is not valid JSON
  */
