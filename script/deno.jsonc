@@ -43,5 +43,6 @@
         "remote_nicks": "deno run --allow-sys --allow-read --allow-write --allow-env jsr:@iherman/display-minutes/nicknames",
         "remote_all": "deno run --allow-sys --allow-read --allow-write --allow-env jsr:@iherman/display-minutes/full"
     },
-    "license": "W3C-20230101"
+    // "license": "W3C-20230101"
+    "license": "MIT"
 }
