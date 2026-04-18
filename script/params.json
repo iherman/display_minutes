@@ -11,6 +11,7 @@
         ""    : "Working group",
         "f2f" : "Group face to face",
         "fxl" : "Fixed layout accessibility task force",
-        "dc"  : "Digital comics task force"
+        "dc"  : "Digital comics task force",
+        "a11y": "A11y task force"
     }
 }
